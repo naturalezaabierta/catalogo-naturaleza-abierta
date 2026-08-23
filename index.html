@@ -843,15 +843,22 @@ window.changeQty = function(id, delta){
   renderDrawer();
 }
 
+window.removeFromCart = function(key){
+  delete cart[key];
+  renderMain();
+  renderCartCount();
+  renderDrawer();
+}
+
 function cartLineItems(){
   const lines = [];
   Object.entries(cart).forEach(([key, val])=>{
     if(typeof val === 'object' && val.tipo === 'reserva'){
-      lines.push({label:`${val.nombre} — ${val.fecha} (${val.persona})`, qty:val.qty, subtotal:val.precio*val.qty});
+      lines.push({key, label:`${val.nombre} — ${val.fecha} (${val.persona})`, qty:val.qty, subtotal:val.precio*val.qty});
     } else {
       const p = PRODUCTOS.find(x=>x.id===key);
       if(!p) return;
-      lines.push({label:p.nombre, qty:val, subtotal:p.precio*val});
+      lines.push({key, label:p.nombre, qty:val, subtotal:p.precio*val});
     }
   });
   return lines;
@@ -874,6 +881,7 @@ function renderDrawer(){
         <div>
           <div class="di-name">${l.label}</div>
           <div class="di-sub">${l.qty} × ${fmtUsd(l.subtotal/l.qty)}</div>
+          <button class="di-remove" onclick="removeFromCart('${l.key}')">Quitar</button>
         </div>
         <div>${fmtUsd(l.subtotal)}</div>
       </div>`).join('');
