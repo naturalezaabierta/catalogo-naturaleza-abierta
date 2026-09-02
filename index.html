@@ -741,6 +741,7 @@ function renderMain(){
     if(term) evItems = evItems.filter(e=> (e.nombre+e.descripcion).toLowerCase().includes(term));
     if(evItems.length){
       sectionHtml += `<div class="grid grid-events">`;
+      const blockedByProducts = cartHasProducts();
       evItems.forEach(ev=>{
         const evQty = eventQty[ev.id] || 1;
         sectionHtml += `<div class="card reserva-card">
@@ -752,22 +753,25 @@ function renderMain(){
           <div class="reserva-fields">
             <div>
               <label>Fecha</label>
-              <select id="fecha_${ev.id}">${ev.fechas.map(f=>`<option>${f}</option>`).join('')}</select>
+              <select id="fecha_${ev.id}" ${blockedByProducts?'disabled':''}>${ev.fechas.map(f=>`<option>${f}</option>`).join('')}</select>
             </div>
             <div>
               <label>Nombre para la reserva</label>
-              <input type="text" id="nombre_${ev.id}" placeholder="Tu nombre completo">
+              <input type="text" id="nombre_${ev.id}" placeholder="Tu nombre completo" ${blockedByProducts?'disabled':''}>
             </div>
             <div>
               <label>Cupos</label>
               <div class="qty-controls">
-                <button onclick="changeEventQty('${ev.id}',-1)">−</button>
+                <button onclick="changeEventQty('${ev.id}',-1)" ${blockedByProducts?'disabled':''}>−</button>
                 <span id="qtyval_${ev.id}">${evQty}</span>
-                <button onclick="changeEventQty('${ev.id}',1)">+</button>
+                <button onclick="changeEventQty('${ev.id}',1)" ${blockedByProducts?'disabled':''}>+</button>
               </div>
             </div>
           </div>
-          <button class="add-btn" onclick="reservarEvento('${ev.id}')">Reservar cupo</button>
+          ${blockedByProducts
+            ? `<button class="add-btn" style="opacity:.5;cursor:not-allowed;" disabled>Reservar cupo</button>
+               <p style="font-size:12px;color:var(--clay);margin:6px 0 0;">Los retiros y experiencias se reservan por separado 🌿. Termina este pedido primero, o vacía el carrito para reservar tu experiencia.</p>`
+            : `<button class="add-btn" onclick="reservarEvento('${ev.id}')">Reservar cupo</button>`}
         </div>`;
       });
       sectionHtml += `</div>`;
@@ -778,6 +782,7 @@ function renderMain(){
     if(term) items = items.filter(p=> (p.nombre+p.descripcion).toLowerCase().includes(term));
     if(items.length){
       sectionHtml += `<div class="grid">`;
+      const blockedByEvents = cartHasEvents();
       items.forEach(p=>{
         const qty = cart[p.id]||0;
         sectionHtml += `<div class="card">
@@ -798,8 +803,11 @@ function renderMain(){
               <button onclick="changeQty('${p.id}',-1)">−</button>
               <span>${qty}</span>
               <button onclick="changeQty('${p.id}',1)">+</button>
-            </div>` : `<button class="add-btn" style="width:auto;padding:8px 14px;" onclick="changeQty('${p.id}',1)">Agregar</button>`)}
+            </div>` : (blockedByEvents
+              ? `<button class="add-btn" style="width:auto;padding:8px 14px;opacity:.5;cursor:not-allowed;" disabled>Agregar</button>`
+              : `<button class="add-btn" style="width:auto;padding:8px 14px;" onclick="changeQty('${p.id}',1)">Agregar</button>`))}
         </div>
+        ${(qty===0 && blockedByEvents) ? `<p style="font-size:12px;color:var(--clay);margin:6px 0 0;">Los retiros y experiencias se reservan por separado 🌿. Termina este pedido primero, o vacía el carrito para agregar productos.</p>` : ''}
       </div>`;
       });
       sectionHtml += `</div>`;
@@ -848,6 +856,13 @@ window.removeFromCart = function(key){
   renderMain();
   renderCartCount();
   renderDrawer();
+}
+
+function cartHasProducts(){
+  return Object.values(cart).some(v => !(typeof v === 'object' && v.tipo === 'reserva'));
+}
+function cartHasEvents(){
+  return Object.values(cart).some(v => typeof v === 'object' && v.tipo === 'reserva');
 }
 
 function cartLineItems(){
