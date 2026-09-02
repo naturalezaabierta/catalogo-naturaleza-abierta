@@ -839,6 +839,7 @@ function reservarEvento(evId){
   const qty = eventQty[evId] || 1;
   if(!nombre){ alert('Escribe tu nombre para la reserva'); return; }
   cart['RESERVA::'+evId+'::'+fecha+'::'+nombre] = {tipo:'reserva', nombre:ev.nombre, fecha, persona:nombre, precio:ev.precio, qty};
+  renderMain();
   renderCartCount();
   openDrawer();
 }
