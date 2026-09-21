@@ -530,16 +530,14 @@
 
 <script>
 /* ============================================================
-   CONEXIÓN EN VIVO a las dos pestañas publicadas de la hoja
-   Base_Comercial_NA_v7. Cada vez que se abre esta página se
-   leen ambos CSV — si agregas, editas o marcas "Disponible" una
-   fila en la hoja, el catálogo se actualiza solo, sin tocar código.
+   CONEXIÓN EN VIVO a Supabase (misma base que el panel).
+   Productos, eventos y tasa BCV se leen con UNA sola función pública
+   (fn_catalogo_publico) que solo entrega los campos que se muestran
+   al público. Lo que edites en el panel (Catálogo / Eventos) aparece
+   aquí al recargar la página.
    ============================================================ */
-const CONFIG = {
-  productosCSV: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHJnzksFQFHifpcAAIXdo4XL_KePxhkYKnAkVJPY5B1smJAkis0I-AwapS-dXan4NHE9bRzsV3CuhK/pub?gid=1859546823&single=true&output=csv",
-  eventosCSV: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHJnzksFQFHifpcAAIXdo4XL_KePxhkYKnAkVJPY5B1smJAkis0I-AwapS-dXan4NHE9bRzsV3CuhK/pub?gid=1950519019&single=true&output=csv",
-  tasaCSV: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTHJnzksFQFHifpcAAIXdo4XL_KePxhkYKnAkVJPY5B1smJAkis0I-AwapS-dXan4NHE9bRzsV3CuhK/pub?gid=10292643&single=true&output=csv"
-};
+const SUPABASE_URL = "https://tgvcvnhrwswuxgjbpvwq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_EKV8OM1y96u-DV_kUPGwkg_BZuGdf4D";
 
 // Emoji por defecto según categoría (se usa solo si el producto no tiene imagen_url)
 const ICONO_POR_CATEGORIA = {
@@ -561,84 +559,63 @@ const CATEGORIAS_META = {
 let PRODUCTOS = [];
 let EVENTOS = [];
 
-// --- Utilidades para leer los CSV publicados de Google Sheets ---
-function normHeader(h){
-  return h.trim().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/\(.*?\)/g,'').trim().replace(/\s+/g,'_');
-}
-function parseCSV(text){
-  const rows = [];
-  let row = [], field = '', inQuotes = false;
-  for(let i=0;i<text.length;i++){
-    const c = text[i], next = text[i+1];
-    if(inQuotes){
-      if(c === '"' && next === '"'){ field += '"'; i++; }
-      else if(c === '"'){ inQuotes = false; }
-      else field += c;
-    } else {
-      if(c === '"') inQuotes = true;
-      else if(c === ','){ row.push(field); field=''; }
-      else if(c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
-      else if(c === '\r'){ /* skip */ }
-      else field += c;
-    }
-  }
-  if(field.length || row.length){ row.push(field); rows.push(row); }
-  const headers = rows.shift().map(normHeader);
-  return rows.filter(r=>r.some(v=>v && v.trim())).map(r=>{
-    const obj = {};
-    headers.forEach((h,i)=> obj[h] = (r[i]||'').trim());
-    return obj;
-  });
-}
 function getEstadoVal(row){
   if('estado' in row) return row.estado;
   const k = Object.keys(row).find(k=>k.startsWith('estado'));
   return k ? row[k] : '';
 }
-async function fetchCSV(url){
-  const res = await fetch(url);
-  if(!res.ok) throw new Error('No se pudo cargar '+url);
-  return parseCSV(await res.text());
+async function rpcPublico(fn){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+    body: '{}'
+  });
+  if(!res.ok) throw new Error('No se pudo cargar ' + fn);
+  return res.json();
 }
+// 0.2 -> "20%"  (en la base las comisiones son fracciones; el catálogo las muestra como texto)
+function pctTxt(v){
+  const n = Number(v);
+  if(!n || n <= 0) return '';
+  return (Math.round(n * 10000) / 100) + '%';
+}
+function txtOrEmpty(v){ return v == null ? '' : String(v); }
 function numOrNull(v){
-  if (v === null || v === undefined) return null;
-  let s = String(v).trim().replace(/[^\d.,]/g, '');
-  if (!s) return null;
-
-  // Si tiene tanto puntos como comas (ej. "8.011,75" o "8,011.75")
-  if (s.includes('.') && s.includes(',')) {
-    if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
-      s = s.replace(/\./g, '').replace(',', '.');
-    } else {
-      s = s.replace(/,/g, '');
-    }
-  } else if (s.includes(',')) {
-    // Si solo usa coma decimal (ej. "804,17")
-    s = s.replace(',', '.');
-  } else if ((s.match(/\./g) || []).length > 1) {
-    // Si tiene múltiples puntos de miles (ej. "8.011.752")
-    s = s.replace(/\./g, '');
-  }
-
-  const n = parseFloat(s);
+  const n = parseFloat(v);
   return isNaN(n) ? null : n;
 }
 
 async function loadData(){
-  const [productosRaw, eventosRaw, tasaRaw] = await Promise.all([
-    fetchCSV(CONFIG.productosCSV).catch(()=>[]),
-    fetchCSV(CONFIG.eventosCSV).catch(()=>[]),
-    CONFIG.tasaCSV ? fetchCSV(CONFIG.tasaCSV).catch(()=>[]) : Promise.resolve([])
-  ]);
+  let d = null;
+  try{ d = await rpcPublico('fn_catalogo_publico'); }catch(_){ d = null; }
+  d = d || {};
 
-  // Fila esperada en CONFIG_BCV: columna "campo" = tasa_bcv, columna "valor" = 214.35
-  const filaTasa = tasaRaw.find(r => (r.campo||'').toLowerCase().trim() === 'tasa_bcv');
-  if(filaTasa){
-    const tasaReal = numOrNull(filaTasa.valor);
-    if(tasaReal) tasaBcv = tasaReal;
-  }
+  // La tasa BCV viene de la misma base (la actualiza el escenario de Make cada 6 h)
+  const tasaReal = numOrNull(d.tasa_bcv);
+  if(tasaReal && tasaReal > 0) tasaBcv = tasaReal;
+
+  // Se convierten las filas de la base al mismo formato que ya usaba el resto de la página
+  const productosRaw = (d.productos || []).map(p => ({
+    id: p.id, nombre: p.nombre, categoria: txtOrEmpty(p.categoria), estado: txtOrEmpty(p.estado),
+    precio: txtOrEmpty(p.precio), resumen_corto: txtOrEmpty(p.resumen_corto),
+    descripcion: txtOrEmpty(p.descripcion), beneficios: txtOrEmpty(p.beneficios),
+    ideal_para: txtOrEmpty(p.ideal_para), incluye: txtOrEmpty(p.incluye),
+    imagen_url: txtOrEmpty(p.imagen_url), video_url: txtOrEmpty(p.video_url),
+    comision_referido_directo_n1: pctTxt(p.comision_n1),
+    comision_referido_indirecto_n2: pctTxt(p.comision_n2),
+    comision_referido_indirecto_n3: pctTxt(p.comision_n3)
+  }));
+  const eventosRaw = (d.eventos || []).map(e => ({
+    id: e.id, nombre: e.nombre, categoria: txtOrEmpty(e.categoria), estado: txtOrEmpty(e.estado),
+    ciudad_estado: txtOrEmpty(e.ciudad_estado), fecha: txtOrEmpty(e.fecha), hora: txtOrEmpty(e.hora),
+    cupos_disponibles: txtOrEmpty(e.cupos_disponibles), precio: txtOrEmpty(e.precio),
+    descripcion: txtOrEmpty(e.descripcion), beneficios: txtOrEmpty(e.beneficios),
+    ideal_para: txtOrEmpty(e.ideal_para), incluye: txtOrEmpty(e.incluye),
+    imagen_url: txtOrEmpty(e.imagen_url), video_url: txtOrEmpty(e.video_url),
+    comision_referido_directo_n1: pctTxt(e.comision_n1),
+    comision_referido_indirecto_n2: pctTxt(e.comision_n2),
+    comision_referido_indirecto_n3: pctTxt(e.comision_n3)
+  }));
 
   PRODUCTOS = productosRaw
     .filter(r => r.id && r.nombre)
@@ -700,7 +677,7 @@ let cart = {}; // id -> qty
 let eventQty = {}; // evId -> cantidad de cupos seleccionada (mín. 1)
 let activeCat = 'Todo';
 let searchTerm = '';
-let tasaBcv = 214.35; // placeholder — en producción vendría del webhook de Make que consulta Pabilo
+let tasaBcv = 0; // se llena con la tasa BCV real que trae fn_catalogo_publico
 
 // --- Ref code desde la URL ---
 const params = new URLSearchParams(window.location.search);
@@ -1058,7 +1035,7 @@ tabsEl.addEventListener('wheel', e=>{
   }
 }, {passive:false});
 
-// Init — espera a que lleguen los datos reales de la hoja antes de dibujar
+// Init — espera a que lleguen los datos reales de Supabase antes de dibujar
 loadData().finally(()=>{
   renderTabs();
   renderMain();
