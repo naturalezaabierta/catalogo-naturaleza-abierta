@@ -74,6 +74,30 @@
   }
   .ref-banner.show{display:block;}
 
+  .dist-banner{
+    margin-top:12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    background:var(--cream-card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 14px;
+    font-size:12.8px;
+    color:var(--forest-soft);
+  }
+  .dist-banner a{
+    color:var(--ochre-dark);
+    font-weight:600;
+    text-decoration:none;
+    white-space:nowrap;
+  }
+  .dist-banner a:hover{text-decoration:underline;}
+  @media (max-width:640px){
+    .dist-banner{ font-size:14px; flex-wrap:wrap; }
+  }
+
   .search-row{
     margin-top:18px;
     display:flex;
@@ -456,6 +480,214 @@
     .float-bar-right{ font-size:15.5px; }
     footer{ font-size:13.5px; }
   }
+
+  /* ==========================================================
+     NATURALEZA ABIERTA · PREMIUM VISUAL LAYER
+     Diseño inspirado en la referencia: natural + internacional,
+     editorial, cálido, limpio y mobile-first.
+     No modifica la lógica de Supabase, carrito, referidos ni WhatsApp.
+     ========================================================== */
+  :root{
+    --moss-bg:#F2F0E8;
+    --moss-bg-2:#E7E8DE;
+    --forest:#17372B;
+    --forest-soft:#4E6258;
+    --ochre:#B98A45;
+    --ochre-dark:#8A642D;
+    --clay:#A96352;
+    --cream-card:#FBFAF5;
+    --line:#D8D7CB;
+    --white:#FFFDF8;
+    --ink:#18231E;
+    --sage:#C8D2C4;
+    --sage-deep:#9EAE9C;
+    --radius:22px;
+    --shadow:0 12px 35px rgba(23,55,43,.08);
+  }
+  body{
+    background:
+      radial-gradient(circle at 8% 8%, rgba(185,138,69,.08), transparent 25rem),
+      radial-gradient(circle at 92% 30%, rgba(158,174,156,.12), transparent 28rem),
+      var(--moss-bg);
+    color:var(--ink);
+  }
+  header{
+    padding:18px 18px 14px;
+    background:rgba(242,240,232,.92);
+    border-bottom:1px solid rgba(216,215,203,.9);
+    box-shadow:0 8px 28px rgba(23,55,43,.05);
+    backdrop-filter:blur(18px) saturate(130%);
+  }
+  .header-inner{max-width:1180px;}
+  .brand{align-items:center;gap:12px;margin-bottom:2px;}
+  .brand svg{display:none;}
+  .brand h1{font-size:clamp(25px,4vw,35px);letter-spacing:-.035em;color:var(--forest);}
+  .brand:before{
+    content:"";
+    width:42px;height:42px;flex:0 0 42px;
+    background:url('https://www.naturalezaabierta.com/wp-content/uploads/2026/03/cropped-cropped-solo-logo-WEB2.png') center/contain no-repeat;
+    filter:saturate(.9);
+  }
+  .brand .tag{font-size:10px;letter-spacing:.19em;color:var(--forest-soft);}
+  .ref-banner{background:var(--forest);box-shadow:0 8px 20px rgba(23,55,43,.16);}
+  .dist-banner{background:rgba(251,250,245,.85);border-color:var(--line);border-radius:14px;}
+  .search-row{margin-top:15px;}
+  .search-box input{
+    min-height:48px;border-color:#D4D4C9;background:rgba(255,253,248,.94);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  .cart-btn{min-height:48px;background:var(--forest);box-shadow:0 8px 18px rgba(23,55,43,.16);}
+  .cart-count{background:var(--ochre);}
+  .tabs-wrap{max-width:1180px;margin-top:13px;}
+  .tabs-wrap .tabs{padding:0 18px 5px;}
+  .tab{padding:10px 16px;background:rgba(255,253,248,.86);border-color:#D3D4C9;font-size:13px;}
+  .tab.active{background:var(--forest);box-shadow:0 7px 16px rgba(23,55,43,.14);}
+
+  .catalog-hero{
+    max-width:1180px;margin:0 auto;padding:26px 20px 8px;
+  }
+  .hero-shell{
+    position:relative;overflow:hidden;min-height:390px;border-radius:32px;
+    background:linear-gradient(125deg,#18392C 0%,#244B39 54%,#526B57 100%);
+    box-shadow:0 24px 55px rgba(23,55,43,.18);
+    display:grid;grid-template-columns:1.02fr .98fr;align-items:stretch;
+  }
+  .hero-shell:before,.hero-shell:after{content:"";position:absolute;border-radius:50%;pointer-events:none;}
+  .hero-shell:before{width:430px;height:430px;right:-170px;top:-180px;background:rgba(255,255,255,.07);}
+  .hero-shell:after{width:300px;height:300px;left:-160px;bottom:-170px;background:rgba(185,138,69,.13);}
+  .hero-copy{position:relative;z-index:2;padding:48px 44px 42px;color:#fff;display:flex;flex-direction:column;justify-content:center;}
+  .hero-kicker{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#E8D3AA;font-weight:600;margin-bottom:13px;}
+  .hero-title{font-family:'Fraunces',serif;font-size:clamp(38px,6vw,66px);line-height:.98;letter-spacing:-.045em;font-weight:500;margin:0 0 18px;max-width:610px;}
+  .hero-title em{font-style:normal;color:#E9D4A8;}
+  .hero-text{font-size:15px;line-height:1.65;color:rgba(255,255,255,.8);max-width:500px;margin:0 0 25px;}
+  .hero-actions{display:flex;flex-wrap:wrap;gap:10px;}
+  .hero-btn{border:none;text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 20px;border-radius:999px;font-size:13px;font-weight:600;}
+  .hero-btn.primary{background:#F5EFE1;color:var(--forest);box-shadow:0 10px 22px rgba(0,0,0,.14);}
+  .hero-btn.secondary{background:rgba(255,255,255,.09);color:#fff;border:1px solid rgba(255,255,255,.25);}
+  .hero-note{font-size:11px;color:rgba(255,255,255,.58);margin-top:17px;letter-spacing:.02em;}
+  .hero-art{position:relative;min-height:390px;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .hero-glow{position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(235,225,199,.12);filter:blur(2px);}
+  .hero-phone{position:absolute;width:166px;height:326px;border:7px solid #17241D;border-radius:28px;background:#F4F0E4;box-shadow:0 24px 45px rgba(0,0,0,.25);overflow:hidden;}
+  .hero-phone.center{transform:translateX(35px) rotate(3deg);z-index:3;width:184px;height:352px;}
+  .hero-phone.left{transform:translateX(-130px) translateY(17px) rotate(-11deg);z-index:2;opacity:.95;}
+  .hero-phone.right{transform:translateX(150px) translateY(23px) rotate(12deg);z-index:1;opacity:.9;}
+  .phone-top{height:30px;background:#17372B;display:flex;align-items:center;justify-content:center;}
+  .phone-dot{width:38px;height:6px;border-radius:999px;background:rgba(255,255,255,.22);}
+  .phone-screen{height:calc(100% - 30px);padding:15px;background:linear-gradient(180deg,#F8F4EA,#E9E8DB);}
+  .phone-logo{height:26px;width:70px;background:url('https://www.naturalezaabierta.com/wp-content/uploads/2026/03/cropped-cropped-solo-logo-WEB2.png') center/contain no-repeat;margin-bottom:13px;}
+  .phone-label{font-family:'Fraunces',serif;font-size:20px;color:#17372B;line-height:1.05;margin-bottom:9px;}
+  .phone-card{height:118px;border-radius:16px;background:linear-gradient(145deg,#D2DBCE,#B8C5B4);margin-bottom:9px;position:relative;overflow:hidden;}
+  .phone-card:before{content:"";position:absolute;width:90px;height:90px;border-radius:50%;right:-18px;bottom:-25px;background:rgba(255,255,255,.42);}
+  .phone-lines{height:7px;border-radius:99px;background:#C4C8B9;margin:7px 0;width:72%;}
+  .phone-lines.short{width:48%;}
+  .phone-pill{height:27px;border-radius:99px;background:#17372B;margin-top:13px;width:100%;}
+
+  .trust-strip{max-width:1180px;margin:0 auto;padding:14px 20px 4px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .trust-item{padding:14px 15px;border:1px solid var(--line);border-radius:16px;background:rgba(255,253,248,.64);display:flex;gap:10px;align-items:center;min-height:64px;}
+  .trust-icon{width:34px;height:34px;border-radius:50%;background:#E3E7DD;display:flex;align-items:center;justify-content:center;font-size:16px;flex:0 0 34px;}
+  .trust-item strong{display:block;font-size:12px;color:var(--forest);margin-bottom:2px;}
+  .trust-item span{display:block;font-size:10.5px;line-height:1.35;color:var(--forest-soft);}
+
+  main{max-width:1180px;padding:22px 20px 140px;}
+  .section-title{font-size:25px;letter-spacing:-.02em;margin:34px 0 5px;}
+  .section-sub{font-size:13.5px;line-height:1.5;max-width:720px;}
+  .divider{margin:12px 0 20px;}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;}
+  .grid-events{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
+  .card{border:1px solid #DDDCD1;border-radius:20px;padding:13px;background:rgba(251,250,245,.94);box-shadow:0 10px 28px rgba(23,55,43,.06);gap:9px;overflow:hidden;}
+  .card:hover{transform:translateY(-4px);box-shadow:0 18px 38px rgba(23,55,43,.11);}
+  .card-img{aspect-ratio:4/4.7;border-radius:15px;margin:0 0 5px;background:#E5E7DD;transition:transform .3s ease;}
+  .card:hover .card-img{transform:scale(1.015);}
+  .card-img.product-img{aspect-ratio:4/5;}
+  .card h3{font-size:18px;letter-spacing:-.015em;color:var(--forest);}
+  .card p{font-size:13px;line-height:1.55;}
+  .more-info{font-size:12px;color:var(--ochre-dark);}
+  .card-footer{margin-top:8px;}
+  .price{font-size:15px;color:var(--forest);}
+  .price-bs{font-size:10.5px;}
+  .qty-controls{box-shadow:0 2px 8px rgba(23,55,43,.05);}
+  .add-btn{min-height:43px;padding:10px;border-radius:12px;background:var(--forest);font-size:13.5px;box-shadow:0 7px 15px rgba(23,55,43,.10);}
+  .add-btn:hover{background:#24513D;}
+  .add-btn.added{background:var(--ochre);}
+
+  .soon-card{padding:42px 20px;border-radius:20px;background:rgba(255,253,248,.72);}
+  .reserva-card{border-radius:20px!important;}
+  .drawer{width:min(430px,94vw);background:#FFFDF8;}
+  .drawer-head{padding:21px 22px;}
+  .drawer-foot{background:#F0F1E9;}
+  .modal-box{max-width:560px;border-radius:24px;}
+  .modal-body{padding:25px;}
+  .float-bar{padding:0 14px 14px;}
+  .float-bar-inner{max-width:720px;border-radius:18px;padding:12px 14px;background:var(--forest);box-shadow:0 14px 34px rgba(23,55,43,.28);}
+  footer{padding-bottom:100px;font-size:11.5px;}
+
+  @media(max-width:820px){
+    .hero-shell{grid-template-columns:1fr;min-height:0;}
+    .hero-copy{padding:36px 28px 20px;}
+    .hero-art{height:310px;min-height:310px;padding:10px 0 24px;}
+    .hero-phone{transform:translateX(22px) rotate(3deg);width:145px;height:286px;}
+    .hero-phone.center{transform:translateX(22px) rotate(3deg);width:160px;height:305px;}
+    .hero-phone.left{transform:translateX(-100px) translateY(12px) rotate(-10deg);}
+    .hero-phone.right{transform:translateX(112px) translateY(17px) rotate(10deg);}
+    .trust-strip{grid-template-columns:repeat(2,1fr);}
+  }
+  @media(max-width:640px){
+    header{padding:13px 12px 10px;}
+    .brand{gap:9px;}
+    .brand:before{width:34px;height:34px;flex-basis:34px;}
+    .brand h1{font-size:25px;}
+    .brand .tag{display:none;}
+    .search-row{gap:7px;}
+    .search-box input{min-height:50px;padding-left:39px;}
+    .cart-btn{min-height:50px;padding:0 13px;}
+    .cart-btn svg{display:none;}
+    .dist-banner{font-size:12px;padding:9px 11px;}
+    .tabs-wrap{margin-top:9px;}
+    .tabs-wrap .tabs{padding-left:12px;padding-right:12px;}
+    .tab{font-size:13.5px;padding:9px 14px;}
+    .catalog-hero{padding:14px 12px 5px;}
+    .hero-shell{border-radius:25px;}
+    .hero-copy{padding:30px 23px 12px;}
+    .hero-kicker{font-size:9px;letter-spacing:.18em;}
+    .hero-title{font-size:40px;line-height:.98;margin-bottom:15px;}
+    .hero-text{font-size:14px;line-height:1.55;margin-bottom:19px;}
+    .hero-btn{min-height:45px;padding:0 16px;font-size:12.5px;}
+    .hero-note{font-size:10px;margin-top:13px;}
+    .hero-art{height:258px;min-height:258px;overflow:hidden;}
+    .hero-phone{width:124px;height:246px;border-width:5px;border-radius:22px;}
+    .hero-phone.center{width:138px;height:266px;transform:translateX(15px) rotate(3deg);}
+    .hero-phone.left{transform:translateX(-83px) translateY(9px) rotate(-9deg);}
+    .hero-phone.right{transform:translateX(94px) translateY(12px) rotate(9deg);}
+    .phone-top{height:22px;}.phone-screen{height:calc(100% - 22px);padding:11px;}.phone-logo{height:20px;width:54px;margin-bottom:9px;}.phone-label{font-size:15px;}.phone-card{height:82px;border-radius:12px;}.phone-pill{height:22px;margin-top:9px;}
+    .trust-strip{padding:10px 12px 0;grid-template-columns:1fr 1fr;gap:8px;}
+    .trust-item{padding:10px;min-height:58px;border-radius:14px;gap:8px;}
+    .trust-icon{width:29px;height:29px;flex-basis:29px;font-size:13px;}
+    .trust-item strong{font-size:10.5px;}.trust-item span{font-size:9px;}
+    main{padding:12px 12px 135px;}
+    .section-title{font-size:23px;margin-top:27px;}
+    .section-sub{font-size:13px;}
+    .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+    .grid-events{grid-template-columns:1fr;}
+    .card{padding:9px;border-radius:16px;gap:7px;}
+    .card-img,.card-img.product-img{border-radius:12px;aspect-ratio:4/4.8;}
+    .card h3{font-size:16px;line-height:1.12;}
+    .card p{font-size:12px;line-height:1.4;}
+    .card-footer{align-items:flex-end;gap:6px;}
+    .price{font-size:13px;}.price-bs{font-size:9px;}
+    .qty-controls{gap:5px;padding:3px 4px;}.qty-controls button{width:24px;height:24px;}.qty-controls span{font-size:13px;}
+    .add-btn{min-height:42px;padding:9px 7px;font-size:12.5px;border-radius:11px;}
+    .more-info{font-size:11px;}
+    .float-bar-inner{padding:10px 11px;border-radius:15px;}
+    .float-bar-right{padding:9px 11px;font-size:12.5px;}
+    .float-bar-left .fb-total{font-size:16px;}
+  }
+  @media(max-width:380px){
+    .hero-title{font-size:36px;}
+    .grid{grid-template-columns:1fr;}
+    .card-img,.card-img.product-img{aspect-ratio:4/4.6;}
+    .trust-strip{grid-template-columns:1fr;}
+  }
+
 </style>
 </head>
 <body>
@@ -479,6 +711,11 @@
         Pedido <span class="cart-count" id="cartCount">0</span>
       </button>
     </div>
+
+    <div class="dist-banner">
+      <span>🗺️ ¿Prefieres comprarle a alguien cerca de ti?</span>
+      <a href="https://distribuidores.naturalezaabierta.com" target="_blank" rel="noopener">Ver distribuidores →</a>
+    </div>
   </div>
 
   <div class="tabs-wrap">
@@ -487,6 +724,43 @@
     <button class="tab-arrow right" id="tabsRight" aria-label="Ver más categorías">›</button>
   </div>
 </header>
+
+
+<section class="catalog-hero" aria-label="Presentación Naturaleza Abierta">
+  <div class="hero-shell">
+    <div class="hero-copy">
+      <div class="hero-kicker">Naturaleza Abierta · Bienestar consciente</div>
+      <h2 class="hero-title">Vuelve a lo esencial.<br><em>Vive diferente.</em></h2>
+      <p class="hero-text">Productos naturales, experiencias y herramientas de bienestar seleccionadas para acompañarte de una forma más consciente, cercana y auténtica.</p>
+      <div class="hero-actions">
+        <button class="hero-btn primary" onclick="document.getElementById('main').scrollIntoView({behavior:'smooth'})">Explorar catálogo</button>
+        <button class="hero-btn secondary" onclick="document.getElementById('cartBtn').click()">Ver mi pedido</button>
+      </div>
+      <div class="hero-note">Compra de forma sencilla · consulta disponibilidad · recibe atención por WhatsApp</div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="hero-glow"></div>
+      <div class="hero-phone left">
+        <div class="phone-top"><div class="phone-dot"></div></div>
+        <div class="phone-screen"><div class="phone-logo"></div><div class="phone-label">Bienestar<br>consciente</div><div class="phone-card"></div><div class="phone-lines"></div><div class="phone-lines short"></div><div class="phone-pill"></div></div>
+      </div>
+      <div class="hero-phone right">
+        <div class="phone-top"><div class="phone-dot"></div></div>
+        <div class="phone-screen"><div class="phone-logo"></div><div class="phone-label">Naturaleza<br>que acompaña</div><div class="phone-card"></div><div class="phone-lines"></div><div class="phone-lines short"></div><div class="phone-pill"></div></div>
+      </div>
+      <div class="hero-phone center">
+        <div class="phone-top"><div class="phone-dot"></div></div>
+        <div class="phone-screen"><div class="phone-logo"></div><div class="phone-label">Tu espacio<br>de bienestar</div><div class="phone-card"></div><div class="phone-lines"></div><div class="phone-lines short"></div><div class="phone-pill"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="trust-strip" aria-label="Características del catálogo">
+  <div class="trust-item"><div class="trust-icon">🌿</div><div><strong>Natural</strong><span>Una propuesta conectada con lo esencial.</span></div></div>
+  <div class="trust-item"><div class="trust-icon">✦</div><div><strong>Consciente</strong><span>Productos y experiencias para tu bienestar.</span></div></div>
+  <div class="trust-item"><div class="trust-icon">◌</div><div><strong>Experiencias</strong><span>Más que productos: momentos para ti.</span></div></div>
+  <div class="trust-item"><div class="trust-icon">⌁</div><div><strong>Atención cercana</strong><span>Tu pedido continúa con Valentina por WhatsApp.</span></div></div>
+</section>
 
 <main id="main"></main>
 
