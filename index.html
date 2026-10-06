@@ -877,7 +877,8 @@ async function loadData(){
     imagen_url: txtOrEmpty(p.imagen_url), video_url: txtOrEmpty(p.video_url),
     comision_referido_directo_n1: pctTxt(p.comision_n1),
     comision_referido_indirecto_n2: pctTxt(p.comision_n2),
-    comision_referido_indirecto_n3: pctTxt(p.comision_n3)
+    comision_referido_indirecto_n3: pctTxt(p.comision_n3),
+    comision_referido_indirecto_n4: pctTxt(p.comision_n4)
   }));
   const eventosRaw = (d.eventos || []).map(e => ({
     id: e.id, nombre: e.nombre, categoria: txtOrEmpty(e.categoria), estado: txtOrEmpty(e.estado),
@@ -888,7 +889,8 @@ async function loadData(){
     imagen_url: txtOrEmpty(e.imagen_url), video_url: txtOrEmpty(e.video_url),
     comision_referido_directo_n1: pctTxt(e.comision_n1),
     comision_referido_indirecto_n2: pctTxt(e.comision_n2),
-    comision_referido_indirecto_n3: pctTxt(e.comision_n3)
+    comision_referido_indirecto_n3: pctTxt(e.comision_n3),
+    comision_referido_indirecto_n4: pctTxt(e.comision_n4)
   }));
 
   PRODUCTOS = productosRaw
@@ -909,7 +911,8 @@ async function loadData(){
         disponible: getEstadoVal(r).toLowerCase().trim() === 'disponible',
         comisionN1: r.comision_referido_directo_n1 || '',
         comisionN2: r.comision_referido_indirecto_n2 || '',
-        comisionN3: r.comision_referido_indirecto_n3 || ''
+        comisionN3: r.comision_referido_indirecto_n3 || '',
+        comisionN4: r.comision_referido_indirecto_n4 || ''
       };
     });
 
@@ -931,7 +934,8 @@ async function loadData(){
         cupos: r.cupos_disponibles || '—',
         comisionN1: r.comision_referido_directo_n1 || '',
         comisionN2: r.comision_referido_indirecto_n2 || '',
-        comisionN3: r.comision_referido_indirecto_n3 || ''
+        comisionN3: r.comision_referido_indirecto_n3 || '',
+        comisionN4: r.comision_referido_indirecto_n4 || ''
       };
     });
 }
@@ -1268,6 +1272,7 @@ window.openReferralInfo = function(id, esEvento){
         ${item.comisionN1 ? `<div style="display:flex;justify-content:space-between;padding:10px 14px;border-radius:10px;background:rgba(163,103,43,0.08);"><span>Tu referido directo</span><b>${item.comisionN1}</b></div>` : ''}
         ${item.comisionN2 ? `<div style="display:flex;justify-content:space-between;padding:10px 14px;border-radius:10px;background:rgba(163,103,43,0.05);"><span>Referido de tu referido</span><b>${item.comisionN2}</b></div>` : ''}
         ${item.comisionN3 ? `<div style="display:flex;justify-content:space-between;padding:10px 14px;border-radius:10px;background:rgba(163,103,43,0.03);"><span>Tercera capa de tu red</span><b>${item.comisionN3}</b></div>` : ''}
+        ${item.comisionN4 ? `<div style="display:flex;justify-content:space-between;padding:10px 14px;border-radius:10px;background:rgba(163,103,43,0.02);"><span>Cuarta capa de tu red</span><b>${item.comisionN4}</b></div>` : ''}
       </div>
       <p style="margin-top:14px;font-size:13px;opacity:.75;">Es decir: ganas más de ${item.comisionN1 || 'un %'} en total por cada venta que se genere gracias a ti, sumando las capas de tu red. Compra hoy y te entregamos tu código para empezar a compartir.</p>
     </div>`;
