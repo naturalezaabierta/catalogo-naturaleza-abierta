@@ -333,11 +333,16 @@
   /* Reserva */
   .reserva-card{padding:16px; display:flex; flex-direction:column; gap:8px;}
   .reserva-card .reserva-fields{display:grid; grid-template-columns:1fr; gap:8px; margin-top:4px;}
-  .reserva-card select, .reserva-card input[type=date]{
+  .reserva-card select, .reserva-card input[type=date], .reserva-card input[type=text]{
     width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line);
     font-family:'Work Sans',sans-serif; font-size:13.5px; background:var(--white); color:var(--forest);
   }
   .reserva-card label{font-size:11.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--forest-soft); font-weight:500; display:block; margin-bottom:4px;}
+
+  .ev-lugar{font-size:13px; color:var(--forest); font-weight:500; margin:0; line-height:1.5;}
+  .abono-box{background:rgba(163,103,43,0.09); border:1px solid rgba(163,103,43,0.3); border-radius:10px; padding:9px 11px; font-size:12.5px; line-height:1.5; color:var(--forest);}
+  .abono-box b{color:var(--ochre-dark, #a3672b);}
+  .nota-nombres{font-size:11.5px; color:var(--forest-soft); margin:4px 0 0; line-height:1.4;}
 
   /* ---------- Cart drawer ---------- */
   .overlay{
@@ -778,6 +783,7 @@
   <div class="drawer-items" id="drawerItems"></div>
   <div class="drawer-foot">
     <div class="total-row"><span>Total USD</span><span id="totalUsd">$0.00</span></div>
+    <div class="total-row main" id="rowAbono" style="display:none"><span>A pagar hoy (abono)</span><span id="totalAbono"></span></div>
     <div class="total-row"><span>Tasa BCV</span><span id="tasaBcv">Bs 0,00</span></div>
     <div class="total-row main"><span>Total Bs (BCV)</span><span id="totalBs">Bs 0,00</span></div>
     <button class="send-btn" id="sendBtn" disabled>
@@ -889,6 +895,7 @@ async function loadData(){
     id: e.id, nombre: e.nombre, categoria: txtOrEmpty(e.categoria), estado: txtOrEmpty(e.estado),
     ciudad_estado: txtOrEmpty(e.ciudad_estado), fecha: txtOrEmpty(e.fecha), hora: txtOrEmpty(e.hora),
     cupos_disponibles: txtOrEmpty(e.cupos_disponibles), precio: txtOrEmpty(e.precio),
+    porcentaje_pago_requerido: e.porcentaje_pago_requerido,
     descripcion: txtOrEmpty(e.descripcion), beneficios: txtOrEmpty(e.beneficios),
     ideal_para: txtOrEmpty(e.ideal_para), incluye: txtOrEmpty(e.incluye),
     imagen_url: txtOrEmpty(e.imagen_url), video_url: txtOrEmpty(e.video_url),
@@ -926,8 +933,14 @@ async function loadData(){
     .map(r => {
       const fechaTxt = [r.ciudad_estado, [r.fecha, r.hora].filter(Boolean).join(' · ')].filter(Boolean).join(': ') || 'Fecha por confirmar';
       const partesEv = [r.descripcion, r.beneficios, r.ideal_para ? 'Ideal para: '+r.ideal_para : '', r.incluye ? 'Incluye: '+r.incluye : ''].filter(Boolean);
+      const pctRaw = numOrNull(r.porcentaje_pago_requerido);
+      const pct = (pctRaw === null || pctRaw <= 0) ? 100 : Math.min(pctRaw <= 1 ? pctRaw * 100 : pctRaw, 100);
       return {
         id: r.id,
+        pct,
+        ciudad: r.ciudad_estado || '',
+        fechaTxt: r.fecha || 'Fecha por confirmar',
+        horaTxt: r.hora || '',
         categoria: r.categoria || 'Reservas presenciales',
         nombre: r.nombre,
         descripcion: r.descripcion || '',
@@ -999,6 +1012,21 @@ function renderTabs(){
 }
 
 function fmtUsd(n){ return '$' + n.toFixed(2); }
+
+// --- Reserva con abono: cuánto se paga hoy y cuánto el día del evento ---
+function montosEvento(ev, qty){
+  const total = Math.round(ev.precio * qty * 100) / 100;
+  const abono = Math.round(total * ev.pct) / 100;
+  return { total, abono, resto: Math.round((total - abono) * 100) / 100, conAbono: ev.pct < 100 };
+}
+function textoAbonoEvento(ev, qty){
+  const m = montosEvento(ev, qty);
+  if(!m.conAbono){
+    return `<b>Reserva con pago completo.</b> Para apartar ${qty>1?'tus '+qty+' cupos':'tu cupo'} pagas ${fmtUsd(m.total)}.`;
+  }
+  const pct = Math.round(ev.pct * 100) / 100;
+  return `<b>Se reserva con un abono del ${pct}%.</b> Hoy pagas ${fmtUsd(m.abono)} para apartar ${qty>1?'tus '+qty+' cupos':'tu cupo'} y el resto (${fmtUsd(m.resto)}) lo pagas el día del evento. Total: ${fmtUsd(m.total)}.`;
+}
 function fmtBs(n){ return 'Bs ' + n.toLocaleString('es-VE', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
 function renderMain(){
@@ -1026,7 +1054,9 @@ function renderMain(){
         sectionHtml += `<div class="card reserva-card">
           ${ev.imagen ? `<img class="card-img" src="${ev.imagen}" alt="${ev.nombre}">` : `<div class="card-icon">🪶</div>`}
           <h3>${ev.nombre}</h3>
+          <p class="ev-lugar">📍 ${ev.ciudad || 'Lugar por confirmar'}<br>📅 ${ev.fechaTxt}${ev.horaTxt ? ' · 🕗 ' + ev.horaTxt : ''}</p>
           <p>Quedan ${ev.cupos} cupos · ${fmtUsd(ev.precio)} por persona</p>
+          <div class="abono-box" id="abono_${ev.id}">${textoAbonoEvento(ev, evQty)}</div>
           <button class="more-info" onclick="openEventInfo('${ev.id}')">Más info</button>
           ${ev.comisionN1 ? `<span class="ref-badge" onclick="openReferralInfo('${ev.id}', true)">✦ Gana refiriendo esta experiencia</span>` : ''}
           <div class="reserva-fields">
@@ -1035,8 +1065,9 @@ function renderMain(){
               <select id="fecha_${ev.id}" ${blockedByProducts?'disabled':''}>${ev.fechas.map(f=>`<option>${f}</option>`).join('')}</select>
             </div>
             <div>
-              <label>Nombre para la reserva</label>
+              <label>Tu nombre (quien reserva)</label>
               <input type="text" id="nombre_${ev.id}" placeholder="Tu nombre completo" ${blockedByProducts?'disabled':''}>
+              <p class="nota-nombres">Si vas con más personas, los nombres de tus acompañantes los escribes en el siguiente paso, donde cada uno recibe su propia entrada con QR.</p>
             </div>
             <div>
               <label>Cupos</label>
@@ -1050,7 +1081,7 @@ function renderMain(){
           ${blockedByProducts
             ? `<button class="add-btn" style="opacity:.5;cursor:not-allowed;" disabled>Reservar cupo</button>
                <p style="font-size:12px;color:var(--clay);margin:6px 0 0;">Los retiros y experiencias se reservan por separado 🌿. Termina este pedido primero, o vacía el carrito para reservar tu experiencia.</p>`
-            : `<button class="add-btn" onclick="reservarEvento('${ev.id}')">Reservar cupo</button>`}
+            : `<button class="add-btn" onclick="reservarEvento('${ev.id}')">${ev.pct < 100 ? 'Reservar con abono' : 'Reservar cupo'}</button>`}
         </div>`;
       });
       sectionHtml += `</div>`;
@@ -1109,6 +1140,9 @@ window.changeEventQty = function(evId, delta){
   eventQty[evId] = next < 1 ? 1 : next;
   const span = document.getElementById('qtyval_'+evId);
   if(span) span.textContent = eventQty[evId];
+  const evSel = EVENTOS.find(e=>e.id===evId);
+  const caja = document.getElementById('abono_'+evId);
+  if(evSel && caja) caja.innerHTML = textoAbonoEvento(evSel, eventQty[evId]);
 }
 
 function reservarEvento(evId){
@@ -1117,7 +1151,7 @@ function reservarEvento(evId){
   const nombre = document.getElementById('nombre_'+evId).value.trim();
   const qty = eventQty[evId] || 1;
   if(!nombre){ alert('Escribe tu nombre para la reserva'); return; }
-  cart['RESERVA::'+evId+'::'+fecha+'::'+nombre] = {tipo:'reserva', nombre:ev.nombre, fecha, persona:nombre, precio:ev.precio, qty};
+  cart['RESERVA::'+evId+'::'+fecha+'::'+nombre] = {tipo:'reserva', id:evId, pct:ev.pct, nombre:ev.nombre, fecha, persona:nombre, precio:ev.precio, qty};
   renderMain();
   renderCartCount();
   openDrawer();
@@ -1149,7 +1183,12 @@ function cartLineItems(){
   const lines = [];
   Object.entries(cart).forEach(([key, val])=>{
     if(typeof val === 'object' && val.tipo === 'reserva'){
-      lines.push({key, label:`${val.nombre} — ${val.fecha} (${val.persona})`, qty:val.qty, subtotal:val.precio*val.qty});
+      const abono = Math.round(val.precio * val.qty * val.pct) / 100;
+      const conAbono = val.pct < 100;
+      lines.push({key, label:`${val.nombre} — ${val.fecha} (${val.persona})`, qty:val.qty, subtotal:val.precio*val.qty,
+        abono, conAbono,
+        sub: `${val.qty} × ${fmtUsd(val.precio)}` + (conAbono ? ` · abono ${Math.round(val.pct*100)/100}% hoy: ${fmtUsd(abono)}, resto el día del evento` : ' · pago completo'),
+        msgExtra: ` [ID: ${val.id}] [${val.qty} cupo(s)]` + (conAbono ? ` [RESERVA CON ABONO ${Math.round(val.pct*100)/100}%: hoy ${fmtUsd(abono)}, resto ${fmtUsd(val.precio*val.qty-abono)} el día del evento]` : ' [PAGO COMPLETO]')});
     } else {
       const p = PRODUCTOS.find(x=>x.id===key);
       if(!p) return;
@@ -1175,7 +1214,7 @@ function renderDrawer(){
       <div class="drawer-item">
         <div>
           <div class="di-name">${l.label}</div>
-          <div class="di-sub">${l.qty} × ${fmtUsd(l.subtotal/l.qty)}</div>
+          <div class="di-sub">${l.sub || (l.qty + ' × ' + fmtUsd(l.subtotal/l.qty))}</div>
           <button class="di-remove" onclick="removeFromCart('${l.key}')">Quitar</button>
         </div>
         <div>${fmtUsd(l.subtotal)}</div>
@@ -1183,6 +1222,11 @@ function renderDrawer(){
   }
   const totalUsd = lines.reduce((s,l)=>s+l.subtotal,0);
   document.getElementById('totalUsd').textContent = fmtUsd(totalUsd);
+  const hayAbono = lines.some(l=>l.conAbono);
+  const abonoHoy = lines.reduce((s,l)=>s+(l.conAbono ? l.abono : l.subtotal),0);
+  const rowAb = document.getElementById('rowAbono');
+  rowAb.style.display = hayAbono ? 'flex' : 'none';
+  document.getElementById('totalAbono').textContent = fmtUsd(abonoHoy) + ' (≈ ' + fmtBs(abonoHoy*tasaBcv) + ')';
   document.getElementById('tasaBcv').textContent = fmtBs(tasaBcv);
   document.getElementById('totalBs').textContent = fmtBs(totalUsd*tasaBcv);
   document.getElementById('sendBtn').disabled = lines.length === 0;
@@ -1211,8 +1255,10 @@ function enviarPedido(){
   if(!lines.length) return;
   const totalUsd = lines.reduce((s,l)=>s+l.subtotal,0);
   let msg = `🛒 *NUEVO PEDIDO*${refCode?` [REF: ${refCode}]`:''}\n\n`;
-  lines.forEach(l=>{ msg += `• ${l.qty>1?l.qty+'x ':''}${l.label} — ${fmtUsd(l.subtotal)}\n`; });
+  lines.forEach(l=>{ msg += `• ${l.qty>1?l.qty+'x ':''}${l.label} — ${fmtUsd(l.subtotal)}${l.msgExtra||''}\n`; });
+  const abonoHoy = lines.reduce((s,l)=>s+(l.conAbono ? l.abono : l.subtotal),0);
   msg += `\nTotal: ${fmtUsd(totalUsd)} (≈ ${fmtBs(totalUsd*tasaBcv)} a tasa BCV)`;
+  if(lines.some(l=>l.conAbono)) msg += `\nA pagar hoy (abono): ${fmtUsd(abonoHoy)} (≈ ${fmtBs(abonoHoy*tasaBcv)})`;
   const waUrl = `https://wa.me/584221482602?text=${encodeURIComponent(msg)}`;
   window.open(waUrl, '_blank');
 }
@@ -1256,6 +1302,8 @@ window.openEventInfo = function(id){
     <div class="modal-body">
       <h2>${ev.nombre}</h2>
       <div class="modal-price">${fmtUsd(ev.precio)} <small>≈ ${fmtBs(ev.precio*tasaBcv)} a tasa BCV · quedan ${ev.cupos} cupos</small></div>
+      <p class="ev-lugar" style="margin-bottom:12px;">📍 ${ev.ciudad || 'Lugar por confirmar'} · 📅 ${ev.fechaTxt}${ev.horaTxt ? ' · 🕗 ' + ev.horaTxt : ''}</p>
+      <div class="abono-box" style="margin-bottom:14px;">${textoAbonoEvento(ev, 1)}</div>
       <p>${ev.descripcionLarga || ev.descripcion}</p>
       ${ev.video ? `<a href="${ev.video}" target="_blank" rel="noopener" class="video-btn" style="margin:12px 0 4px;">▶ Ver video</a>` : ''}
       ${ev.comisionN1 ? `<button class="ref-badge" style="margin-top:10px;" onclick="openReferralInfo('${ev.id}', true)">✦ Gana refiriendo esta experiencia</button>` : ''}
@@ -1292,7 +1340,10 @@ function renderFloatBar(){
   const count = lines.reduce((s,l)=>s+l.qty,0);
   const totalUsd = lines.reduce((s,l)=>s+l.subtotal,0);
   document.getElementById('fbCount').textContent = count + (count===1?' producto':' productos');
-  document.getElementById('fbTotal').textContent = fmtUsd(totalUsd) + ' · ' + fmtBs(totalUsd*tasaBcv);
+  const abonoHoy = lines.reduce((s,l)=>s+(l.conAbono ? l.abono : l.subtotal),0);
+  document.getElementById('fbTotal').textContent = lines.some(l=>l.conAbono)
+    ? 'Hoy ' + fmtUsd(abonoHoy) + ' · ' + fmtBs(abonoHoy*tasaBcv)
+    : fmtUsd(totalUsd) + ' · ' + fmtBs(totalUsd*tasaBcv);
   bar.classList.add('show');
 }
 
