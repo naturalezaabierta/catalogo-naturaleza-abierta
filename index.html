@@ -699,6 +699,22 @@
   }
 
 </style>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1058891023827887');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1058891023827887&ev=PageView&noscript=1"/></noscript>
+<!-- End Meta Pixel Code -->
 </head>
 <body>
 
@@ -977,10 +993,15 @@ let tasaBcv = 0; // se llena con la tasa BCV real que trae fn_catalogo_publico
 
 // --- Ref code desde la URL ---
 const params = new URLSearchParams(window.location.search);
-const refCode = params.get('ref');
+// Solo se acepta un código con formato NA-12345. Si llega un teléfono, se convierte a su código; si no, se ignora.
+let refCode = (params.get('ref') || '').trim().toUpperCase().replace(/[\[\]\r\n]/g,'').slice(0,40);
+const soloDigitos = refCode.replace(/\D/g,'');
+if(!/^NA-\d{5}$/.test(refCode)){
+  refCode = soloDigitos.length >= 10 ? 'NA-' + soloDigitos.slice(-5) : '';
+}
 if(refCode){
   const b = document.getElementById('refBanner');
-  b.textContent = `Estás comprando con el código de referido de ${refCode}`;
+  b.textContent = `Estás comprando con el código de referido ${refCode}`;
   b.classList.add('show');
 }
 
@@ -1254,6 +1275,7 @@ function enviarPedido(){
   const lines = cartLineItems();
   if(!lines.length) return;
   const totalUsd = lines.reduce((s,l)=>s+l.subtotal,0);
+  if(window.fbq) fbq('track','InitiateCheckout',{value:totalUsd,currency:'USD',num_items:lines.length,content_type:'product'});
   let msg = `🛒 *NUEVO PEDIDO*${refCode?` [REF: ${refCode}]`:''}\n\n`;
   lines.forEach(l=>{ msg += `• ${l.qty>1?l.qty+'x ':''}${l.label} — ${fmtUsd(l.subtotal)}${l.msgExtra||''}\n`; });
   const abonoHoy = lines.reduce((s,l)=>s+(l.conAbono ? l.abono : l.subtotal),0);
@@ -1267,6 +1289,7 @@ document.getElementById('floatBarInner').addEventListener('click', enviarPedido)
 
 // --- Modal "Más info" ---
 window.openInfo = function(id){
+  if(window.fbq) fbq('track','ViewContent',{content_ids:[id],content_name:(PRODUCTOS.find(x=>x.id===id)||{}).nombre,content_type:'product'});
   const p = PRODUCTOS.find(x=>x.id===id);
   if(!p) return;
   const box = document.getElementById('modalBox');
@@ -1293,6 +1316,7 @@ document.getElementById('modalOverlay').addEventListener('click', e=>{
 
 // --- Modal "Más info" para eventos/experiencias (mismo estilo que productos) ---
 window.openEventInfo = function(id){
+  if(window.fbq) fbq('track','ViewContent',{content_ids:[id],content_name:(EVENTOS.find(x=>x.id===id)||{}).nombre,content_type:'product'});
   const ev = EVENTOS.find(x=>x.id===id);
   if(!ev) return;
   const box = document.getElementById('modalBox');
@@ -1313,6 +1337,7 @@ window.openEventInfo = function(id){
 
 // --- Modal "Refiriendo este producto/experiencia" (programa de referidos) ---
 window.openReferralInfo = function(id, esEvento){
+  if(window.fbq) fbq('trackCustom','VerProgramaReferidos',{content_ids:[id],tipo:esEvento?'evento':'producto'});
   const item = esEvento ? EVENTOS.find(x=>x.id===id) : PRODUCTOS.find(x=>x.id===id);
   if(!item) return;
   const box = document.getElementById('modalBox');
@@ -1351,11 +1376,13 @@ function renderFloatBar(){
 const _origChangeQty = window.changeQty;
 window.changeQty = function(id, delta){
   _origChangeQty(id, delta);
+  if(delta>0 && window.fbq) fbq('track','AddToCart',{content_ids:[id],content_name:(PRODUCTOS.find(x=>x.id===id)||{}).nombre,content_type:'product'});
   renderFloatBar();
 }
 const _origReservar = reservarEvento;
 window.reservarEvento = function(evId){
   _origReservar(evId);
+  if(window.fbq && Object.keys(cart).some(k=>k.startsWith('RESERVA::'+evId))) fbq('track','AddToCart',{content_ids:[evId],content_name:(EVENTOS.find(x=>x.id===evId)||{}).nombre,content_type:'product'});
   renderFloatBar();
 }
 
