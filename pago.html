@@ -1,0 +1,142 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pagar · Naturaleza Abierta</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/css/tienda.css"></head><body><header class="top" id="top"></header>
+<main class="narrow">
+<h1 style="margin:26px 0 6px">Pagar aquí</h1>
+<p class="bs">Tu pago se verifica automáticamente, sin esperar a nadie.</p>
+<div class="banner" id="refBanner"></div>
+<div id="res" class="totals"></div>
+<div class="steps">
+ <div class="step" id="s1"><h3><i>1</i> Tus datos</h3>
+  <div class="two"><div class="field"><label>Nombre</label><input id="nom" autocomplete="given-name"></div><div class="field"><label>Apellido</label><input id="ape" autocomplete="family-name"></div></div>
+  <div class="two"><div class="field"><label>WhatsApp (con código de área)</label><input id="tel" type="tel" inputmode="tel" placeholder="0412 1234567" autocomplete="tel"></div><div class="field"><label>Correo</label><input id="cor" type="email" autocomplete="email"></div></div>
+  <div id="acomp"></div>
+ </div>
+ <div class="step" id="s2"><h3><i>2</i> Método de pago</h3><div class="methods" id="meths"></div><div class="msg" id="m2"></div><br><button class="btn" id="cont">Continuar</button></div>
+ <div class="step off" id="s3"><h3><i>3</i> Paga y pega la referencia</h3>
+  <div id="timerbox" class="hide"><p class="bs">Tu cupo está apartado por</p><div class="timer" id="timer">10:00</div></div>
+  <div class="datos" id="datos"></div>
+  <p>Monto a pagar: <b id="monto"></b> <span class="bs" id="montobs"></span></p>
+  <div class="field" style="margin-top:12px"><label>Número de referencia del pago</label><input id="ref" inputmode="numeric" placeholder="Ej: 123456789"></div>
+  <div class="msg" id="m3"></div>
+  <button class="btn ochre block" id="ver">Ya pagué, verificar</button>
+  <p class="bs" style="margin-top:10px">¿Prefieres enviar captura o tienes algún problema? <a id="walink" href="#" target="_blank" rel="noopener">Habla con Valentina</a></p>
+ </div>
+</div>
+</main>
+<footer id="foot"></footer><script src="assets/js/app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(async function(){
+  NA.init(); const {$,esc}=NA;
+  const tipo=NA.qs('tipo')==='reserva'?'reserva':'pedido';
+  let D; try{D=await NA.catalogo();}catch(e){}
+  let metodo=null, orden=NA.store.get('na_pago',null), cotiz=null, lines=[], reserva=null, total=0, aPagar=0;
+  if(orden && orden.tipo!==tipo) orden=null;
+
+  /* ---- Resumen ---- */
+  if(tipo==='pedido'){
+    const c=NA.cart.all(); lines=Object.keys(c).map(id=>{const p=((D&&D.productos)||[]).find(x=>x.id===id&&x.estado==='Disponible');return p?{id,nombre:p.nombre,q:c[id],precio:p.precio}:null;}).filter(Boolean);
+    if(!lines.length && !orden){ $('#res').innerHTML='<p>Tu pedido está vacío. <a href="index.html">Ver catálogo</a></p>'; $('.steps').classList.add('hide'); return; }
+    total=lines.reduce((a,l)=>a+l.precio*l.q,0); aPagar=total;
+    $('#res').innerHTML=lines.map(l=>'<div class="l"><span>'+(l.q>1?l.q+'× ':'')+esc(l.nombre)+'</span><span>'+NA.fmtUsd(l.precio*l.q)+'</span></div>').join('')+'<div class="l t"><span>Total</span><span>'+NA.fmtUsd(total)+'</span></div>';
+  } else {
+    reserva=NA.store.get('na_reserva',null);
+    if(!reserva){ $('#res').innerHTML='<p>No hay una experiencia elegida. <a href="index.html">Ver experiencias</a></p>'; $('.steps').classList.add('hide'); return; }
+    total=reserva.precio*reserva.qty;
+    try{ cotiz=await NA.rpc('fn_cotizar_reserva_experiencia',{p_evento_id:reserva.evento_id,p_cantidad:reserva.qty,p_codigo_referido_usado:NA.getRef(),p_tel_wa:null}); }catch(e){}
+    aPagar = cotiz&&cotiz.ok ? Number(cotiz.monto_anticipo) : (reserva.pct<100?total*reserva.pct/100:total);
+    const saldo=total-aPagar;
+    $('#res').innerHTML='<div class="l"><span>'+(reserva.qty>1?reserva.qty+'× ':'')+esc(reserva.nombre)+'</span><span>'+NA.fmtUsd(total)+'</span></div><div class="l"><small>'+esc(reserva.ciudad||'')+' · '+esc(reserva.fecha||'')+' '+esc(reserva.hora||'')+'</small></div>'+(saldo>0.001?'<div class="l"><span>Resto el día del evento</span><span>'+NA.fmtUsd(saldo)+'</span></div>':'')+'<div class="l t"><span>Pagas hoy</span><span>'+NA.fmtUsd(aPagar)+'</span></div>';
+    const n=reserva.qty-1; if(n>0){ $('#acomp').innerHTML='<p class="bs" style="margin:4px 0 8px">Nombre de tus acompañantes (cada uno recibe su QR):</p>'+Array.from({length:n},(_,i)=>'<div class="field"><input class="aco" placeholder="Acompañante '+(i+2)+'"></div>').join(''); }
+  }
+  /* ---- Prefill ---- */
+  const prev=NA.store.get('na_datos',{}); ['nom','ape','tel','cor'].forEach(k=>{ if(prev[k]) $('#'+k).value=prev[k]; });
+
+  /* ---- Métodos ---- */
+  let tipos=[]; try{ tipos=(await NA.rpc('fn_metodos_pago_tipos_activos')).map(x=>x.tipo||x); }catch(e){}
+  if(!tipos.length) tipos=['Pago Móvil'];
+  $('#meths').innerHTML=tipos.map(t=>'<button class="m" data-t="'+esc(t)+'">'+esc(t)+'</button>').join('');
+  $('#meths').querySelectorAll('.m').forEach(b=>b.onclick=()=>{metodo=b.dataset.t;$('#meths').querySelectorAll('.m').forEach(x=>x.classList.toggle('on',x===b));});
+  if(tipos.length===1){ metodo=tipos[0]; $('#meths .m').classList.add('on'); }
+
+  function waResumen(){ const r=NA.getRef(); return NA.waLink('Hola Valentina, quiero ayuda con mi pago'+(orden?' del pedido '+orden.pedido_id:'')+(r?' [REF: '+r+']':'')); }
+  $('#walink').href=waResumen();
+
+  /* ---- Mostrar datos de pago ---- */
+  async function mostrarPago(){
+    $('#s1').classList.add('off'); $('#s2').classList.add('off'); $('#s3').classList.remove('off');
+    $('#monto').textContent=NA.fmtUsd(orden.monto); $('#montobs').textContent=NA.state.tasa?'(≈ '+NA.fmtBs(orden.monto)+')':'';
+    let m=null; try{ m=await NA.rpc('fn_obtener_metodo_pago_rotado',{p_tipo:orden.metodo,p_tel_wa:orden.tel,p_compra_id:orden.pedido_id}); }catch(e){}
+    if(m&&m.ok){ $('#datos').innerHTML=(m.campos||[]).map(c=>'<div class="r"><span>'+esc(c.etiqueta)+'</span><span><b>'+esc(c.valor)+'</b> <button class="copy" data-v="'+esc(c.valor)+'">Copiar</button></span></div>').join('')+(m.nota?'<p class="bs">'+esc(m.nota)+'</p>':''); $('#datos').querySelectorAll('.copy').forEach(b=>b.onclick=()=>{NA.copiar(b.dataset.v,b);NA.rpc('fn_marcar_copia_metodo_pago',{p_tel_wa:orden.tel,p_tipo:orden.metodo}).catch(()=>{});}); }
+    else $('#datos').innerHTML='<p>No pudimos mostrar los datos de pago. <a href="'+waResumen()+'" target="_blank">Pídelos a Valentina</a>.</p>';
+    $('#walink').href=waResumen();
+    if(orden.tipo==='reserva') timer();
+  }
+  let tmr=null;
+  async function timer(){
+    $('#timerbox').classList.remove('hide');
+    let seg=600; try{ const e=await NA.rpc('fn_estado_reserva',{p_compra_id:orden.pedido_id}); if(e.ok) seg=e.segundos_restantes; if(e.estado==='procesada'){ return; } }catch(e){}
+    const t0=Date.now(), s0=seg; clearInterval(tmr);
+    tmr=setInterval(()=>{ const r=Math.max(0,s0-Math.floor((Date.now()-t0)/1000)); $('#timer').textContent=String(Math.floor(r/60)).padStart(2,'0')+':'+String(r%60).padStart(2,'0'); if(r<=0){ clearInterval(tmr); NA.showMsg($('#m3'),'err','Se venció el tiempo del cupo apartado. Si ya pagaste, escríbele a Valentina. Si no, vuelve a apartar.'); $('#ver').textContent='Volver a apartar'; $('#ver').onclick=()=>{NA.store.del('na_pago');location.href='experiencia.html?id='+encodeURIComponent(reserva.evento_id);}; } },1000);
+  }
+
+  /* ---- Continuar: crear pedido o reserva ---- */
+  $('#cont').onclick=async()=>{
+    const nom=$('#nom').value.trim(), ape=$('#ape').value.trim(), tel=NA.soloDig($('#tel').value), cor=$('#cor').value.trim();
+    const m=$('#m2'); NA.hideMsg(m);
+    if(!nom||!ape) return NA.showMsg(m,'err','Escribe tu nombre y apellido.');
+    if(tel.length<10) return NA.showMsg(m,'err','Escribe tu WhatsApp con código de área (ej. 0412 1234567).');
+    if(!/^\S+@\S+\.\S+$/.test(cor)) return NA.showMsg(m,'err','Escribe un correo válido: ahí te llega tu resumen.');
+    if(!metodo) return NA.showMsg(m,'err','Elige un método de pago.');
+    NA.store.set('na_datos',{nom,ape,tel,cor}); NA.store.set('na_tel',tel);
+    const btn=$('#cont'); btn.disabled=true; btn.textContent='Preparando…';
+    try{
+      if(tipo==='pedido'){
+        const r=await NA.rpc('fn_crear_pedido',{p_items:lines.map(l=>({producto_id:l.id,cantidad:l.q})),p_nombre:nom+' '+ape,p_telefono:tel,p_correo:cor,p_codigo_referido:NA.getRef(),p_origen:'web_pagar_aqui'});
+        if(!r.ok) throw new Error(r.error||'No se pudo crear el pedido');
+        orden={tipo,pedido_id:r.pedido_id,tel,metodo,monto:Number(r.total_usd)};
+      } else {
+        const aco=Array.from(document.querySelectorAll('.aco')).map(i=>i.value.trim()).filter(Boolean);
+        const r=await NA.rpc('fn_crear_reserva_experiencia',{p_evento_id:reserva.evento_id,p_cantidad:reserva.qty,p_nombre:nom,p_apellido:ape,p_telefono:tel,p_metodo_pago_elegido:metodo,p_codigo_referido_usado:NA.getRef(),p_correo:cor,p_tel_wa:tel,p_asistentes:aco});
+        if(!r.ok) throw new Error(r.mensaje||r.error||'No se pudo apartar el cupo');
+        orden={tipo,pedido_id:r.compra_id,tel,metodo,monto:aPagar};
+      }
+      NA.store.set('na_pago',orden); await mostrarPago();
+    }catch(e){ NA.showMsg(m,'err',(e.message||'Algo falló').replace(/^.*?\{.*"message":"?/,'').slice(0,200)+' — intenta de nuevo o habla con Valentina.'); btn.disabled=false; btn.textContent='Continuar'; }
+  };
+
+  /* ---- Verificar ---- */
+  let polling=false;
+  $('#ver').onclick=verificar;
+  async function verificar(){
+    const ref=NA.soloDig($('#ref').value), m=$('#m3'); NA.hideMsg(m);
+    if(ref.length<4) return NA.showMsg(m,'err','Pega el número de referencia que te dio tu banco (solo números).');
+    const b=$('#ver'); b.disabled=true; b.textContent='Verificando…';
+    try{
+      const fn=orden.tipo==='reserva'?'fn_registrar_referencia_reserva':'fn_registrar_referencia_pedido';
+      const args=orden.tipo==='reserva'?{p_compra_id:orden.pedido_id}:{p_pedido_id:orden.pedido_id};
+      const r=await NA.rpc(fn,{...args,p_telefono:orden.tel,p_metodo:orden.metodo,p_referencia:ref,p_comprobante_url:null});
+      if(!r.ok){ NA.showMsg(m,'err',r.mensaje||({referencia_repetida:'Esa referencia ya fue usada en otro pago.',vencida:'El tiempo del cupo se venció.',telefono_no_coincide:'El teléfono no coincide con el del pedido.'}[r.error])||('No se pudo registrar: '+(r.error||'error'))); b.disabled=false; b.textContent='Ya pagué, verificar'; return; }
+      NA.hook(NA.HOOK_VERIFICAR,{pedido_id:orden.pedido_id});
+      NA.showMsg(m,'info','Estamos verificando tu pago con el banco… no cierres esta página.');
+      pollear();
+    }catch(e){ NA.showMsg(m,'err','No pudimos registrar la referencia. Intenta de nuevo o habla con Valentina.'); b.disabled=false; b.textContent='Ya pagué, verificar'; }
+  }
+  async function pollear(){
+    if(polling) return; polling=true; const m=$('#m3'), b=$('#ver'); const t0=Date.now();
+    while(Date.now()-t0<150000){
+      await new Promise(r=>setTimeout(r,4000));
+      let e; try{ e=await NA.rpc('fn_estado_pedido',{p_pedido_id:orden.pedido_id,p_telefono:orden.tel}); }catch(x){ continue; }
+      if(e.ok&&e.estado==='pagado'){ NA.cart.clear(); NA.store.del('na_pago'); NA.store.del('na_reserva'); location.href='confirmado.html?pedido='+encodeURIComponent(orden.pedido_id); return; }
+      if(e.ok&&(e.estado==='rechazado')){ NA.showMsg(m,'err',e.nota||'No pudimos verificar ese pago. Revisa la referencia y el monto.'); b.disabled=false; b.textContent='Ya pagué, verificar'; polling=false; return; }
+    }
+    NA.showMsg(m,'info','Tu pago sigue en verificación. Te avisaremos por correo y WhatsApp apenas se confirme. Si tardas, habla con Valentina.'); b.disabled=false; b.textContent='Revisar de nuevo'; b.onclick=()=>{polling=false;pollear();}; polling=false;
+  }
+
+  /* ---- Retomar si ya había una orden abierta ---- */
+  if(orden){
+    if(orden.tipo==='pedido' && lines.length===0) { /* carrito ya limpio */ }
+    $('#nom').value=prev.nom||''; await mostrarPago();
+    try{ const e=await NA.rpc('fn_estado_pedido',{p_pedido_id:orden.pedido_id,p_telefono:orden.tel}); if(e.ok&&e.estado==='pagado'){ location.href='confirmado.html?pedido='+encodeURIComponent(orden.pedido_id); } if(e.ok&&e.estado==='verificando'){ $('#ver').disabled=true; NA.showMsg($('#m3'),'info','Estamos verificando tu pago…'); pollear(); } }catch(e){}
+  }
+})();
+</script></body></html>
