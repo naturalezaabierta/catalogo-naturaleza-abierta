@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Producto · Naturaleza Abierta</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/css/tienda.css"></head><body><header class="top" id="top"></header>
+<main class="wrap">
+<div class="crumbs"><a href="index.html">Tienda</a> / <span id="cc">…</span> / <span id="cn">…</span></div>
+<div class="banner" id="refBanner"></div>
+<div id="v"><p>Cargando…</p></div>
+</main>
+<footer id="foot"></footer><script src="assets/js/app.js"></script>
+<script>
+(async function(){ NA.init(); const {$,esc}=NA; const id=NA.qs('id');
+
+  function gal(L,nombre){
+    if(!L.length) L=[{tipo:"imagen",url:NA.imgOf({})}];
+    const im=L.filter(x=>x.tipo==="imagen"), vd=L.filter(x=>x.tipo==="video");
+    const all=[...im,...vd]; let cur=0;
+    const th=all.map((m,i)=>"<button data-i=\""+i+"\" class=\""+(i===0?"on":"")+"\">"+(m.tipo==="video"?"<div class=\"vid\">▶</div>":"<img src=\""+esc(m.url)+"\" alt=\"\">")+"</button>").join("");
+    return {html:"<div class=\"gal\"><div class=\"main\" id=\"gm\"></div>"+(all.length>1?"<div class=\"th\">"+th+"</div>":"")+"</div>",
+      bind(){ const show=i=>{const m=all[i]; $("#gm").innerHTML=m.tipo==="video"?NA.videoHtml(m.url):"<img src=\""+esc(m.url)+"\" alt=\""+esc(nombre)+"\">"; document.querySelectorAll(".gal .th button").forEach((b,j)=>b.classList.toggle("on",j===i));}; show(0); document.querySelectorAll(".gal .th button").forEach(b=>b.onclick=()=>show(+b.dataset.i)); }};
+  }
+  function nivelesHtml(it,que){ const c=NA.comisiones(it); if(!c[0]) return ""; const nom=["Tu referido directo","Referido de tu referido","Tercera capa","Cuarta capa"]; return "<div class=\"sec\"><h3>Gana refiriendo "+que+"</h3><p>Comparte tu enlace de referido y gana una comisión por cada venta de tu red.</p><div class=\"lv\">"+c.map((v,i)=>v?"<div><b>"+v+"%</b><span>"+nom[i]+"</span></div>":"").join("")+"</div></div>"; }
+
+  let D,X; try{[D,X]=await Promise.all([NA.catalogo(),NA.extra()]);}catch(e){$('#v').innerHTML='<p>No pudimos cargar el producto.</p>';return;}
+  const p=(D.productos||[]).find(x=>x.id===id);
+  if(!p){$('#v').innerHTML='<p>Este producto no existe. <a href="index.html">Volver a la tienda</a></p>';return;}
+  document.title=p.nombre+' · Naturaleza Abierta'; $('#cn').textContent=p.nombre; $('#cc').textContent=p.categoria;
+  NA.track('ViewContent',{content_ids:[p.id],content_name:p.nombre,content_type:'product'});
+  const disp=p.estado==='Disponible'; let qty=1;
+  const sec=(t,x)=>x?'<div class="sec"><h3>'+t+'</h3><p>'+esc(x)+'</p></div>':'';
+  const g=gal(NA.medios(X,p),p.nombre);
+  const rel=(D.productos||[]).filter(x=>x.id!==p.id&&x.estado==='Disponible').slice(0,4);
+  $('#v').innerHTML='<div class="prod">'+g.html+'<div><span class="tag">'+esc(p.categoria)+'</span><h1>'+esc(p.nombre)+'</h1><p style="color:var(--muted)">'+esc(p.resumen_corto||'')+'</p><div class="price">'+NA.fmtUsd(p.precio)+'</div><div class="bs">'+(NA.state.tasa?'Bs '+NA.fmtBs(p.precio).replace('Bs ','')+' a tasa BCV ('+NA.state.tasa.toLocaleString('es-VE')+')':'')+'</div>'
+  +(p.incluye?'<p style="margin-top:12px"><b>Incluye:</b> '+esc(p.incluye)+'</p>':'')
+  +(disp?'<div class="row" style="margin:18px 0 6px"><div class="qty"><button id="m">−</button><span id="n">1</span><button id="pl">+</button></div><button class="btn ochre" id="add"></button></div><div class="bs" id="totbs"></div><div style="height:10px"></div><a class="btn wa block" id="wa" href="#">Pedir con Valentina por WhatsApp</a><p class="note">Paga aquí mismo con verificación automática, o deja que Valentina te guíe. Precios en dólares y en bolívares a tasa BCV. Si es tu primera compra, recibes tu código de referido.</p>':'<p class="tag" style="margin-top:16px">No disponible por ahora</p>')
+  +'</div></div>'+nivelesHtml(p,'este producto')+sec('Descripción',p.descripcion)+sec('Beneficios',p.beneficios)+sec('Ideal para',p.ideal_para)
+  +(rel.length?'<h2 class="sect">También te puede interesar</h2><div class="rel">'+rel.map(r=>'<a class="card" href="producto.html?id='+encodeURIComponent(r.id)+'"><div class="im"><img loading="lazy" src="'+esc((NA.medios(X,r).find(m=>m.tipo==='imagen')||{url:NA.imgOf(r)}).url)+'" alt=""></div><div class="bd"><h3>'+esc(r.nombre)+'</h3><div class="pr">'+NA.fmtUsd(r.precio)+'</div></div></a>').join('')+'</div>':'');
+  g.bind(); if(!disp)return;
+  function calc(){ $('#n').textContent=qty; $('#add').textContent='Agregar al pedido · '+NA.fmtUsd(p.precio*qty); $('#totbs').textContent=NA.state.tasa?'Total en bolívares: '+NA.fmtBs(p.precio*qty):''; }
+  $('#m').onclick=()=>{qty=Math.max(1,qty-1);calc();}; $('#pl').onclick=()=>{qty=Math.min(20,qty+1);calc();}; calc();
+  $('#add').onclick=()=>{NA.cart.add(p.id,qty);NA.track('AddToCart',{content_ids:[p.id],content_name:p.nombre,content_type:'product'});location.href='carrito.html';};
+  $('#wa').onclick=e=>{e.preventDefault();const r=NA.getRef();let m='🛒 *NUEVO PEDIDO*'+(r?' [REF: '+r+']':'')+'\n• '+(qty>1?qty+'x ':'')+p.nombre+' — '+NA.fmtUsd(p.precio*qty)+' [ID: '+p.id+']\n*Total: '+NA.fmtUsd(p.precio*qty)+'*';window.open(NA.waLink(m),'_blank');};
+})();
+</script></body></html>

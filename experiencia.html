@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Experiencia · Naturaleza Abierta</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/css/tienda.css"></head><body><header class="top" id="top"></header>
+<main class="wrap">
+<div class="crumbs"><a href="index.html">Tienda</a> / <a href="index.html#experiencias">Experiencias</a> / <span id="cn">…</span></div>
+<div class="banner" id="refBanner"></div>
+<div id="v"><p>Cargando…</p></div>
+</main>
+<footer id="foot"></footer><script src="assets/js/app.js"></script>
+<script>
+(async function(){ NA.init(); const {$,esc}=NA; const id=NA.qs('id');
+
+  function gal(L,nombre){
+    if(!L.length) L=[{tipo:"imagen",url:NA.imgOf({})}];
+    const im=L.filter(x=>x.tipo==="imagen"), vd=L.filter(x=>x.tipo==="video");
+    const all=[...im,...vd]; let cur=0;
+    const th=all.map((m,i)=>"<button data-i=\""+i+"\" class=\""+(i===0?"on":"")+"\">"+(m.tipo==="video"?"<div class=\"vid\">▶</div>":"<img src=\""+esc(m.url)+"\" alt=\"\">")+"</button>").join("");
+    return {html:"<div class=\"gal\"><div class=\"main\" id=\"gm\"></div>"+(all.length>1?"<div class=\"th\">"+th+"</div>":"")+"</div>",
+      bind(){ const show=i=>{const m=all[i]; $("#gm").innerHTML=m.tipo==="video"?NA.videoHtml(m.url):"<img src=\""+esc(m.url)+"\" alt=\""+esc(nombre)+"\">"; document.querySelectorAll(".gal .th button").forEach((b,j)=>b.classList.toggle("on",j===i));}; show(0); document.querySelectorAll(".gal .th button").forEach(b=>b.onclick=()=>show(+b.dataset.i)); }};
+  }
+  function nivelesHtml(it,que){ const c=NA.comisiones(it); if(!c[0]) return ""; const nom=["Tu referido directo","Referido de tu referido","Tercera capa","Cuarta capa"]; return "<div class=\"sec\"><h3>Gana refiriendo "+que+"</h3><p>Comparte tu enlace de referido y gana una comisión por cada venta de tu red.</p><div class=\"lv\">"+c.map((v,i)=>v?"<div><b>"+v+"%</b><span>"+nom[i]+"</span></div>":"").join("")+"</div></div>"; }
+
+  let D,X; try{[D,X]=await Promise.all([NA.catalogo(),NA.extra()]);}catch(e){$('#v').innerHTML='<p>No pudimos cargar la experiencia.</p>';return;}
+  const e=(D.eventos||[]).find(x=>x.id===id);
+  if(!e){$('#v').innerHTML='<p>Esta experiencia no existe o ya pasó. <a href="index.html">Volver a la tienda</a></p>';return;}
+  document.title=e.nombre+' · Naturaleza Abierta'; $('#cn').textContent=e.nombre;
+  NA.track('ViewContent',{content_ids:[e.id],content_name:e.nombre,content_type:'product'});
+  const disp=e.estado==='Disponible'&&e.cupos_disponibles>0; const pc=Number(e.porcentaje_pago_requerido)||100;
+  let qty=1; const max=Math.max(1,Math.min(10,e.cupos_disponibles||1));
+  const sec=(t,x)=>x?'<div class="sec"><h3>'+t+'</h3><p>'+esc(x)+'</p></div>':'';
+  const g=gal(NA.medios(X,e),e.nombre);
+  $('#v').innerHTML='<div class="prod">'+g.html+'<div><span class="tag">Evento</span><h1>'+esc(e.nombre)+'</h1>'
+  +'<p style="color:var(--muted)">📍 '+esc(e.ciudad_estado||'')+'<br>📅 '+esc(e.fecha||'')+' · Encuentro '+esc(e.hora||'')+'<br>👥 Quedan '+esc(e.cupos_disponibles)+' cupos</p>'
+  +'<div class="price">'+NA.fmtUsd(e.precio)+' <small style="font-size:14px;color:var(--muted)">por persona</small></div><div class="bs">'+(NA.state.tasa?NA.fmtBs(e.precio)+' a tasa BCV ('+NA.state.tasa.toLocaleString('es-VE')+')':'')+'</div>'
+  +(disp?'<div class="sec" style="margin-top:16px"><h3>'+(pc<100?'Se reserva con un abono del '+pc+'%':'Aparta tu cupo')+'</h3><p id="calc"></p><div class="row" style="margin:12px 0"><span>Cupos:</span><div class="qty"><button id="m">−</button><span id="n">1</span><button id="pl">+</button></div></div><p class="note">Si vas con más personas, los nombres de tus acompañantes los escribes en el siguiente paso, donde cada uno recibe su propia entrada con QR.</p><br><button class="btn ochre block" id="go"></button><div style="height:8px"></div><a class="btn wa block" id="wa" href="#">Reservar con Valentina por WhatsApp</a></div>':'<p class="tag" style="margin-top:16px">Cupos agotados</p>')
+  +'</div></div>'+nivelesHtml(e,'esta experiencia')+sec('Qué es',e.descripcion)+sec('Beneficios',e.beneficios)+sec('Ideal para',e.ideal_para)+sec('Qué incluye',e.incluye)
+  +'<div class="sec"><h3>Horario del día</h3><p>Hora de encuentro: <b>'+esc(e.hora||'')+'</b>. El detalle de cuándo comienza y termina está en la descripción de arriba.</p></div>';
+  g.bind(); if(!disp)return;
+  function calc(){const t=e.precio*qty,h=pc<100?t*pc/100:t;$('#n').textContent=qty;$('#calc').innerHTML='Hoy pagas <b>'+NA.fmtUsd(h)+'</b>'+(NA.state.tasa?' ('+NA.fmtBs(h)+')':'')+(pc<100?' para apartar tus cupos y el resto (<b>'+NA.fmtUsd(t-h)+'</b>) lo pagas el día del evento.':'.')+' Total: '+NA.fmtUsd(t)+'.';$('#go').textContent=(pc<100?'Reservar con abono · ':'Reservar · ')+NA.fmtUsd(h);}
+  $('#m').onclick=()=>{qty=Math.max(1,qty-1);calc();}; $('#pl').onclick=()=>{qty=Math.min(max,qty+1);calc();}; calc();
+  $('#go').onclick=()=>{NA.store.set('na_reserva',{evento_id:e.id,nombre:e.nombre,fecha:e.fecha,hora:e.hora,ciudad:e.ciudad_estado,precio:e.precio,pct:pc,qty});NA.track('AddToCart',{content_ids:[e.id],content_name:e.nombre,content_type:'product'});location.href='pago.html?tipo=reserva';};
+  $('#wa').onclick=ev=>{ev.preventDefault();const r=NA.getRef(),t=e.precio*qty,h=pc<100?t*pc/100:t;let m='🛒 *NUEVO PEDIDO*'+(r?' [REF: '+r+']':'')+'\n• '+(qty>1?qty+'x ':'')+e.nombre+' — '+NA.fmtUsd(t)+' [ID: '+e.id+'] ['+qty+' cupo(s)]'+(pc<100?' [RESERVA CON ABONO '+pc+'%: hoy '+NA.fmtUsd(h)+', resto '+NA.fmtUsd(t-h)+' el día del evento]':' [PAGO COMPLETO]')+'\n*Total: '+NA.fmtUsd(t)+'*';window.open(NA.waLink(m),'_blank');};
+})();
+</script></body></html>
